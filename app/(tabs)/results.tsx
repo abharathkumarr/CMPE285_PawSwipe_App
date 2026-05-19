@@ -10,12 +10,7 @@ import {
 } from 'react-native';
 import { SetupScreen } from '../../src/components/SetupScreen';
 import { colors, layout } from '../../src/constants/theme';
-import {
-  fetchAnalyticsSummary,
-  fetchResults,
-  sortResults,
-  yesRate,
-} from '../../src/lib/api';
+import { fetchResults, sortResults, yesRate } from '../../src/lib/api';
 import { isSupabaseConfigured } from '../../src/lib/supabase';
 import type { ItemResult, ResultsSort } from '../../src/lib/types';
 
@@ -32,8 +27,6 @@ export default function ResultsScreen() {
   const [results, setResults] = useState<ItemResult[]>([]);
   const [sort, setSort] = useState<ResultsSort>('most_loved');
   const [error, setError] = useState<string | null>(null);
-  const [analytics, setAnalytics] = useState<string | null>(null);
-
   const load = useCallback(async () => {
     if (!isSupabaseConfigured) {
       setError('Configure Supabase in .env');
@@ -41,15 +34,8 @@ export default function ResultsScreen() {
       return;
     }
     try {
-      const [data, summary] = await Promise.all([
-        fetchResults(),
-        fetchAnalyticsSummary(),
-      ]);
+      const data = await fetchResults();
       setResults(data);
-      setAnalytics(
-        `${summary.totalSwipes} swipes · ${summary.sessions} sessions` +
-          (summary.avgDecisionMs ? ` · ~${summary.avgDecisionMs}ms avg` : '')
-      );
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load results');
@@ -81,7 +67,6 @@ export default function ResultsScreen() {
   return (
     <View style={styles.screen}>
       <Text style={styles.subtitle}>Community votes (includes demo voters)</Text>
-      {analytics ? <Text style={styles.analytics}>{analytics}</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.chips}>
@@ -150,11 +135,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
     marginBottom: 4,
-  },
-  analytics: {
-    color: colors.accent,
-    fontSize: 12,
-    marginBottom: 8,
   },
   error: {
     color: '#fecaca',

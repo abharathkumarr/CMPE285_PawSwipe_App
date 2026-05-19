@@ -49,6 +49,7 @@ The product is themed around **real adoptable pets**, not generic stock cards.
 | **Vote persistence** | Each logged-in user gets **one vote per pet**; changing your mind updates the same row (dedup via unique `(item_id, user_id)`). | Supabase `votes` + `submitVote()` |
 | **110+ catalog** | Items loaded from Postgres; empty DB shows setup/seed instructions instead of a fake “all done” screen. | `fetchItems()`, `scripts/seed.mjs` |
 | **Results** | Community aggregates: yes/no counts and yes **percentage** per pet; sort by most loved, most divisive, or fewest votes. | **Results** tab |
+| **Analytics** | Total swipes, sessions, average decision time, undos, community yes/no split charts, decision-time bars; auto-refresh every 5s. | **Analytics** tab |
 | **End of deck** | When you’ve voted on every pet, home shows completion state (distinct from “database has zero items”). | Vote tab |
 | **Email login** | Sign up / sign in with email + username; session stored on device (SecureStore). No Supabase Auth email links. | `app/login.tsx`, `users` table + RPCs |
 | **Undo** | Revert your **last** swipe and remove that vote from the server. | Vote tab |
@@ -83,7 +84,8 @@ flowchart LR
 1. **Sign in** (or create an account).
 2. **Vote** tab — swipe through the deck; each choice is saved immediately.
 3. **Results** — see global rankings and percentages (refreshes on a timer).
-4. **Matches** — see pets you loved that the community also loved (after enough demo votes exist).
+4. **Analytics** — swipes, sessions, avg decision time, vote-split charts, timing distribution.
+5. **Matches** — see pets you loved that the community also loved (after enough demo votes exist).
 
 ---
 
@@ -156,6 +158,7 @@ app/
   (tabs)/
     index.tsx            # Vote — swipe deck, undo, sign out
     results.tsx          # community aggregates
+    analytics.tsx        # swipes, sessions, charts
     matches.tsx          # your yes + high community yes %
 src/
   lib/api.ts             # items, votes, results, analytics

@@ -53,6 +53,16 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="analytics"
+        options={{
+          title: 'Analytics',
+          tabBarLabel: 'Analytics',
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name="stats-chart" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="matches"
         options={{
           title: 'Matches',

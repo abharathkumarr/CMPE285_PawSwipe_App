@@ -152,42 +152,133 @@ export async function trackSessionStart(userId: string): Promise<void> {
   });
 }
 
-export async function fetchAnalyticsSummary(): Promise<{
+export type AnalyticsDashboard = {
   totalSwipes: number;
   sessions: number;
   avgDecisionMs: number | null;
-}> {
-  if (!isSupabaseConfigured) {
-    return { totalSwipes: 0, sessions: 0, avgDecisionMs: null };
+  undoCount: number;
+  totalCommunityVotes: number;
+  communityYes: number;
+  communityNo: number;
+  swipeYes: number;
+  swipeNo: number;
+  totalItems: number;
+  uniqueVoters: number;
+  decisionBuckets: { label: string; count: number }[];
+};
+
+function bucketDecisionMs(ms: number): string {
+  if (ms < 1000) return 'Under 1s';
+  if (ms < 3000) return '1–3s';
+  if (ms < 5000) return '3–5s';
+  return '5s+';
+}
+
+const EMPTY_ANALYTICS: AnalyticsDashboard = {
+  totalSwipes: 0,
+  sessions: 0,
+  avgDecisionMs: null,
+  undoCount: 0,
+  totalCommunityVotes: 0,
+  communityYes: 0,
+  communityNo: 0,
+  swipeYes: 0,
+  swipeNo: 0,
+  totalItems: 0,
+  uniqueVoters: 0,
+  decisionBuckets: [
+    { label: 'Under 1s', count: 0 },
+    { label: '1–3s', count: 0 },
+    { label: '3–5s', count: 0 },
+    { label: '5s+', count: 0 },
+  ],
+};
+
+/** Basic analytics for the Analytics tab. */
+export async function fetchAnalyticsDashboard(): Promise<AnalyticsDashboard> {
+  if (!isSupabaseConfigured) return { ...EMPTY_ANALYTICS };
+
+  const sb = getSupabase();
+
+  const [
+    swipeRes,
+    sessionRes,
+    undoRes,
+    swipeEventsRes,
+    votesRes,
+    resultsRes,
+    itemsRes,
+  ] = await Promise.all([
+    sb
+      .from('analytics_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_type', 'swipe'),
+    sb.from('analytics_events').select('session_id').eq('event_type', 'session_start'),
+    sb
+      .from('analytics_events')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_type', 'undo'),
+    sb.from('analytics_events').select('payload').eq('event_type', 'swipe'),
+    sb.from('votes').select('decision_ms, user_id, session_id'),
+    sb.from('item_results').select('yes_count, no_count, total_votes'),
+    sb.from('items').select('id', { count: 'exact', head: true }),
+  ]);
+
+  const sessions = new Set((sessionRes.data ?? []).map((s) => s.session_id)).size;
+
+  let swipeYes = 0;
+  let swipeNo = 0;
+  for (const row of swipeEventsRes.data ?? []) {
+    const choice = (row.payload as { choice?: string } | null)?.choice;
+    if (choice === 'yes') swipeYes += 1;
+    else if (choice === 'no') swipeNo += 1;
   }
 
-  const { count: swipeCount } = await getSupabase()
-    .from('analytics_events')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_type', 'swipe');
+  let communityYes = 0;
+  let communityNo = 0;
+  let totalCommunityVotes = 0;
+  for (const r of resultsRes.data ?? []) {
+    communityYes += r.yes_count ?? 0;
+    communityNo += r.no_count ?? 0;
+    totalCommunityVotes += r.total_votes ?? 0;
+  }
 
-  const { data: sessions } = await getSupabase()
-    .from('analytics_events')
-    .select('session_id')
-    .eq('event_type', 'session_start');
+  const bucketMap = new Map<string, number>(
+    EMPTY_ANALYTICS.decisionBuckets.map((b) => [b.label, 0])
+  );
+  const voterIds = new Set<string>();
+  const times: number[] = [];
 
-  const uniqueSessions = new Set((sessions ?? []).map((s) => s.session_id)).size;
+  for (const v of votesRes.data ?? []) {
+    if (v.user_id) voterIds.add(`u:${v.user_id}`);
+    else if (v.session_id) voterIds.add(`s:${v.session_id}`);
+    const ms = v.decision_ms as number | null;
+    if (ms != null && ms > 0) {
+      times.push(ms);
+      const label = bucketDecisionMs(ms);
+      bucketMap.set(label, (bucketMap.get(label) ?? 0) + 1);
+    }
+  }
 
-  const { data: swipes } = await getSupabase()
-    .from('votes')
-    .select('decision_ms')
-    .not('decision_ms', 'is', null);
-
-  const times = (swipes ?? [])
-    .map((s) => s.decision_ms as number)
-    .filter((n) => n > 0);
   const avgDecisionMs = times.length
     ? Math.round(times.reduce((a, b) => a + b, 0) / times.length)
     : null;
 
   return {
-    totalSwipes: swipeCount ?? 0,
-    sessions: uniqueSessions,
+    totalSwipes: swipeRes.count ?? 0,
+    sessions,
     avgDecisionMs,
+    undoCount: undoRes.count ?? 0,
+    totalCommunityVotes,
+    communityYes,
+    communityNo,
+    swipeYes,
+    swipeNo,
+    totalItems: itemsRes.count ?? 0,
+    uniqueVoters: voterIds.size,
+    decisionBuckets: EMPTY_ANALYTICS.decisionBuckets.map((b) => ({
+      label: b.label,
+      count: bucketMap.get(b.label) ?? 0,
+    })),
   };
 }
