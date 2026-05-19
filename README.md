@@ -41,6 +41,10 @@ npx expo start --clear
 
 Expo Router · React Native · Supabase Postgres · custom email/password in `users` table · SecureStore sessions
 
+## Requirements checklist
+
+See [REQUIREMENTS_CHECKLIST.pdf](REQUIREMENTS_CHECKLIST.pdf) for a short summary of which CMPE 282 core and stretch requirements are met.
+
 ## AI notes
 
 See [AI_NOTES.md](AI_NOTES.md).
