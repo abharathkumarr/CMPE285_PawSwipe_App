@@ -1,3 +1,4 @@
+.pdf-venv/
 node_modules/
 .expo/
 dist/
