@@ -1,6 +1,6 @@
 # PawSwipe
 
-Swipe-to-vote mobile app for **CMPE 282**. Users browse adoptable pets one card at a time, swipe right for “I’d adopt” or left to pass, and see how everyone else voted. Built with **Expo SDK 54** and **Supabase** (Postgres as the source of truth).
+Swipe-to-vote mobile app for **CMPE 285**. Users browse adoptable pets one card at a time, swipe right for “I’d adopt” or left to pass, and see how everyone else voted. Built with **Expo SDK 54** and **Supabase** (Postgres as the source of truth).
 
 > The brief asked for mobile web; this repo uses **React Native / Expo** (Expo Go, simulator, or web).
 
@@ -43,7 +43,7 @@ Expo Router · React Native · Supabase Postgres · custom email/password in `us
 
 ## Requirements checklist
 
-See [REQUIREMENTS_CHECKLIST.pdf](REQUIREMENTS_CHECKLIST.pdf) for a short summary of which CMPE 282 core and stretch requirements are met.
+See [REQUIREMENTS_CHECKLIST.pdf](REQUIREMENTS_CHECKLIST.pdf) for a short summary of which CMPE 285 core and stretch requirements are met.
 
 ## AI notes
 
