@@ -14,19 +14,31 @@ const supabase = createClient(url, serviceKey, {
   realtime: { transport: ws },
 });
 
-const { data, error } = await supabase.rpc('register_user', {
-  p_email: 'demo@pawswipe.app',
-  p_password: 'password123',
-  p_username: 'demo',
-});
+const USERS = [
+  { email: 'demo@pawswipe.app', password: 'password123', username: 'demo' },
+  { email: 'bharath@pawswipe.app', password: 'password123', username: 'bharath' },
+];
 
-if (error) {
-  if (error.message.includes('duplicate') || error.message.includes('unique')) {
-    console.log('Demo user already exists: demo@pawswipe.app / password123');
-    process.exit(0);
+async function seedUser({ email, password, username }) {
+  const { data, error } = await supabase.rpc('register_user', {
+    p_email: email,
+    p_password: password,
+    p_username: username,
+  });
+
+  if (error) {
+    if (error.message.includes('duplicate') || error.message.includes('unique')) {
+      console.log(`Already exists: ${email} / ${password} (username: ${username})`);
+      return;
+    }
+    throw new Error(`${email}: ${error.message}`);
   }
-  console.error(error.message);
-  process.exit(1);
+
+  console.log(`Created: ${email} / ${password} (username: ${data?.[0]?.username ?? username})`);
 }
 
-console.log('Demo user ready: demo@pawswipe.app / password123', data);
+for (const user of USERS) {
+  await seedUser(user);
+}
+
+console.log('\nLogin with email + password on the app sign-in screen.');
